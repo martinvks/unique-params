@@ -16,6 +16,7 @@ type ParamUrl struct {
 }
 
 var pathParamRegex = regexp.MustCompile(`^\d+$`)
+var uuidParamRegex = regexp.MustCompile(`^(?i)[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$`)
 
 func main() {
 	var urls []string
@@ -67,7 +68,7 @@ func getParamUrl(val string) (ParamUrl, error) {
 
 	patternSegments := make([]string, len(segments))
 	for index, segment := range segments {
-		if pathParamRegex.MatchString(segment) {
+		if pathParamRegex.MatchString(segment) || uuidParamRegex.MatchString(segment) {
 			patternSegments[index] = "ID"
 		} else {
 			patternSegments[index] = segment
