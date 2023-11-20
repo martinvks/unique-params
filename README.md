@@ -10,7 +10,7 @@ go install github.com/martinvks/unique-params@latest
 cat urls.txt | unique-params > filtered.txt
 ```
 ## What does it do?
-URLs that have the same host and path are reduced to a single url with all the unique query paramaters.
+URLs that have the same host and path are reduced to a single url with all the unique query parameters.
 ```
 $ cat urls.txt
 https://example.com/search?query=computerphile
