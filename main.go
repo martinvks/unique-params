@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -15,10 +16,24 @@ type ParamUrl struct {
 	query       url.Values
 }
 
+const pathParamPlaceholder = "{ID}"
+
 var pathParamRegex = regexp.MustCompile(`^\d+$`)
 var uuidParamRegex = regexp.MustCompile(`^(?i)[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$`)
 
 func main() {
+	max := flag.Int(
+		"max",
+		0,
+		"maximum number of URLs to output (0 = unlimited)",
+	)
+	maxQuery := flag.Int(
+		"max-query",
+		0,
+		"maximum number of query parameters per URL (0 = unlimited)",
+	)
+	flag.Parse()
+
 	var urls []string
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
@@ -37,6 +52,10 @@ func main() {
 			continue
 		}
 
+		if len(paramUrl.query) == 0 && !strings.Contains(paramUrl.pathPattern, pathParamPlaceholder) {
+			continue
+		}
+
 		result, ok := results[paramUrl.pathPattern]
 		if !ok {
 			results[paramUrl.pathPattern] = paramUrl
@@ -44,6 +63,9 @@ func main() {
 		}
 
 		for qk, qv := range paramUrl.query {
+			if *maxQuery > 0 && len(result.query) >= *maxQuery {
+				break
+			}
 			_, ok := result.query[qk]
 			if !ok {
 				result.query[qk] = qv
@@ -51,10 +73,15 @@ func main() {
 		}
 	}
 
+	i := 0
 	for _, val := range results {
+		if *max > 0 && i >= *max {
+			break
+		}
 		target := val.pathUrl
 		target.RawQuery = val.query.Encode()
 		fmt.Println(target)
+		i++
 	}
 }
 
@@ -69,7 +96,7 @@ func getParamUrl(val string) (ParamUrl, error) {
 	patternSegments := make([]string, len(segments))
 	for index, segment := range segments {
 		if pathParamRegex.MatchString(segment) || uuidParamRegex.MatchString(segment) {
-			patternSegments[index] = "ID"
+			patternSegments[index] = pathParamPlaceholder
 		} else {
 			patternSegments[index] = segment
 		}
